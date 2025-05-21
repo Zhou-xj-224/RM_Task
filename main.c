@@ -28,7 +28,12 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+/*引脚定义
+#define LED_1_Pin GPIO_PIN_3
+#define LED_1_GPIO_Port GPIOA
+#define Key_1_Pin GPIO_PIN_1
+#define Key_1_GPIO_Port GPIOB
+#define Key_1_EXTI_IRQn EXTI1_IRQn*/
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
