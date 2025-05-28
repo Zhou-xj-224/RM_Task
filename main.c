@@ -18,27 +18,25 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "tim.h"
+#include "dma.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "bsp_usart.h"
+#include "math.h"
+#include "string.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-/*引脚定义
-#define LED_1_Pin GPIO_PIN_3
-#define LED_1_GPIO_Port GPIOA
-#define Key_1_Pin GPIO_PIN_1
-#define Key_1_GPIO_Port GPIOB
-#define Key_1_EXTI_IRQn EXTI1_IRQn*/
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define PI 3.14159
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -49,18 +47,47 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t Mode = 1;	//Mode == 1 时，按键外部中断翻转LED电平，Mode == 2 时，定时器中断翻转LED电平
+int a = 0;
+float A_sin = 1000.0;//振幅
+float A_cos = 1000.0;
+float l_sin = 500.0;//波长
+float l_cos = 500.0;
+uint8_t rx_buffer[10];
+float tmp_data;
+float y_sin = 0;//图上的y值
+float y_cos = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void Serialplot(float param_1,float apram_2)//在上位机上发送两个参数
+{
+	 UART1_Tx_Data[0] = 0xAB;
+	for(uint8_t i = 0; i < 4; i++)
+	{
+	  UART1_Tx_Data[i+1] = *((char *)(&param_1) + i);
+	}
+	for(uint8_t i = 0; i <4; i++)
+	{
+		 UART1_Tx_Data[i+5] = *((char *)(&apram_2) + i);
+	}
+	HAL_Delay(1);
+	UART_Send_Data(&huart1, UART1_Tx_Data, 9);
+}
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void Serialploa_Call_Back(uint8_t *buffer, uint16_t Size)
+{
+	if(strcmp(buffer,"aaa") == 0)
+	{
+		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -92,9 +119,11 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_TIM1_Init();
+  MX_DMA_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_Start_IT(&htim1);
+  Uart_Init(&huart1, rx_buffer, 10, Serialploa_Call_Back);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -104,6 +133,16 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  static float flag_sin = 0;//正弦函数的当前x轴上的值
+	  static float flag_cos = 0;//余弦函数的当前x轴上的值
+	  //tmp_data = 0;
+	  flag_sin++;
+	  flag_cos++;
+	  if(flag_sin == l_sin) flag_sin=0;
+	  if(flag_cos == l_cos) flag_cos=0;
+	  y_sin = A_sin*sin(PI/180.0*flag_sin*360/l_sin);
+	  y_cos = A_cos*cos(PI/180.0*flag_cos*360/l_cos);
+	  Serialplot(y_sin, y_cos);
   }
   /* USER CODE END 3 */
 }
